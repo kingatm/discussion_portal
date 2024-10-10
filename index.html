@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discussion Portal</title>
+    <style>
+        :root {
+            --primary-color: #0070f3;
+            --background-color: #f0f0f0;
+            --text-color: #333;
+            --border-color: #ddd;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .nav-bar {
+            background-color: rgb(0, 128, 96);
+            color: white;
+            padding: 1px 10px;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .left-pane {
+            width: 30%;
+            padding: 20px;
+            background-color: white;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+        }
+
+        .right-pane {
+            width: 70%;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        input,
+        textarea {
+            width: 95%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .question-item {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .question-item:hover {
+            background-color: #e9e9e9;
+        }
+
+        .response {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        #searchInput {
+            width: 50%;
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Specific styles for the input fields and textarea inside response form */
+        .right-pane #responseForm input,
+        .right-pane #responseForm textarea {
+            width: 80%;
+            /* Reduced width */
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav-bar">
+        <h1>Discussion Portal</h1>
+    </div>
+    <div class="container">
+        <div class="left-pane">
+            <button id="newQuestionBtn">New Question form</button>
+            <input type="text" id="searchInput" placeholder="Search questions...">
+            <div id="questionList"></div>
+        </div>
+        <div class="right-pane" id="rightPane">
+            <h2>Welcome to Discussion Portal!</h2>
+            <p>Enter a subject and question to get started</p>
+            <form id="questionForm">
+                <input type="text" id="questionTitle" placeholder="Enter Title" required>
+                <textarea id="questionContent" placeholder="Enter Question" required></textarea>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let questions = [];
+        let selectedQuestion = null;
+
+        const questionList = document.getElementById('questionList');
+        const rightPane = document.getElementById('rightPane');
+        const questionForm = document.getElementById('questionForm');
+        const newQuestionBtn = document.getElementById('newQuestionBtn');
+        const searchInput = document.getElementById('searchInput');
+
+        function addQuestion(title, content) {
+            const question = {
+                id: Date.now(),
+                title,
+                content,
+                responses: []
+            };
+            questions.push(question);
+            renderQuestionList();
+            return question;
+        }
+
+        function renderQuestionList() {
+            questionList.innerHTML = '';
+            questions.forEach(question => {
+                const questionElement = document.createElement('div');
+                questionElement.className = 'question-item';
+                questionElement.innerHTML = `
+                    <h3>${question.title}</h3>
+                    <p>${question.content}</p>
+                `;
+                questionElement.addEventListener('click', () => selectQuestion(question));
+                questionList.appendChild(questionElement);
+            });
+        }
+
+        function selectQuestion(question) {
+            selectedQuestion = question;
+            renderQuestionDetails();
+        }
+
+        function renderQuestionDetails() {
+            rightPane.innerHTML = `
+                <h2>Question</h2>
+                <div class="question-item">
+                    <h3>${selectedQuestion.title}</h3>
+                    <p>${selectedQuestion.content}</p>
+                </div>
+                <button id="resolveBtn">Resolve</button>
+                <h3>Responses</h3>
+                <div id="responseList"></div>
+                <h3>Add Response</h3>
+                <form id="responseForm">
+                    <input type="text" id="responseName" placeholder="Enter Name" required>
+                    <textarea id="responseComment" placeholder="Enter Comment" required></textarea>
+                    <button type="submit">Submit</button>
+                </form>
+            `;
+
+            const resolveBtn = document.getElementById('resolveBtn');
+            resolveBtn.addEventListener('click', resolveQuestion);
+
+            const responseForm = document.getElementById('responseForm');
+            responseForm.addEventListener('submit', addResponse);
+
+            renderResponses();
+        }
+
+        function renderResponses() {
+            const responseList = document.getElementById('responseList');
+            responseList.innerHTML = '';
+            selectedQuestion.responses.forEach(response => {
+                const responseElement = document.createElement('div');
+                responseElement.className = 'response';
+                responseElement.innerHTML = `
+                    <h4>${response.name}</h4>
+                    <p>${response.comment}</p>
+                `;
+                responseList.appendChild(responseElement);
+            });
+        }
+
+        function addResponse(e) {
+            e.preventDefault();
+            const name = document.getElementById('responseName').value;
+            const comment = document.getElementById('responseComment').value;
+            selectedQuestion.responses.push({ name, comment });
+            renderResponses();
+            e.target.reset();
+        }
+
+        function resolveQuestion() {
+            questions = questions.filter(q => q.id !== selectedQuestion.id);
+            renderQuestionList();
+            showNewQuestionForm();
+        }
+
+        function showNewQuestionForm() {
+            rightPane.innerHTML = `
+                <h2>Welcome to Discussion Portal!</h2>
+                <p>Enter a subject and question to get started</p>
+                <form id="questionForm">
+                    <input type="text" id="questionTitle" placeholder="Enter Title" required>
+                    <textarea id="questionContent" placeholder="Enter Question" required></textarea>
+                    <button type="submit">Submit</button>
+                </form>
+            `;
+            const newQuestionForm = document.getElementById('questionForm');
+            newQuestionForm.addEventListener('submit', submitQuestion);
+        }
+
+        function submitQuestion(e) {
+            e.preventDefault();
+            const title = document.getElementById('questionTitle').value;
+            const content = document.getElementById('questionContent').value;
+            const question = addQuestion(title, content);
+            selectQuestion(question);
+            e.target.reset();
+        }
+
+        questionForm.addEventListener('submit', submitQuestion);
+        newQuestionBtn.addEventListener('click', showNewQuestionForm);
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredQuestions = questions.filter(q =>
+                q.title.toLowerCase().includes(searchTerm) ||
+                q.content.toLowerCase().includes(searchTerm)
+            );
+            renderFilteredQuestions(filteredQuestions);
+        });
+
+        function renderFilteredQuestions(filteredQuestions) {
+            questionList.innerHTML = '';
+            filteredQuestions.forEach(question => {
+                const questionElement = document.createElement('div');
+                questionElement.className = 'question-item';
+                questionElement.innerHTML = `
+                    <h3>${question.title}</h3>
+                    <p>${question.content}</p>
+                `;
+                questionElement.addEventListener('click', () => selectQuestion(question));
+                questionList.innerHTML += questionElement.outerHTML;
+            });
+        }
+    </script>
+</body>
+
+</html>
